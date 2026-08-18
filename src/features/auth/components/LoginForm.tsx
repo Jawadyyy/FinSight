@@ -1,6 +1,6 @@
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FcGoogle } from "react-icons/fc";
+import { GoogleLogin } from "@react-oauth/google";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
-import { login } from "../api/authApi";
+import { login, googleLogin } from "../api/authApi";
 import { loginSchema, type LoginFields } from "../schemas/authSchema";
 
 export default function LoginForm() {
@@ -37,6 +37,19 @@ export default function LoginForm() {
     } catch {
       // The backend returns 401 "Invalid email or password".
       setError("root", { message: "Invalid email or password" });
+    }
+  };
+
+  // Called by @react-oauth/google with the Google ID token ("credential").
+  // We hand it to the backend, which verifies it and returns our own tokens.
+  const handleGoogle = async (credential?: string) => {
+    if (!credential) return;
+    try {
+      const res = await googleLogin(credential);
+      setAuth(res);
+      navigate("/dashboard");
+    } catch {
+      setError("root", { message: "Google sign-in failed" });
     }
   };
 
@@ -82,21 +95,15 @@ export default function LoginForm() {
             <Button type="submit" disabled={isSubmitting} className="w-full">
               {isSubmitting ? "Loading..." : "Sign In"}
             </Button>
-
-            {/* OAuth is a full-page redirect, not a fetch — navigate the whole
-                window to the backend route (goes through the Vite /auth proxy). */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                window.location.href = "/auth/google";
-              }}
-            >
-              <FcGoogle className="text-xl" />
-              Log in with Google
-            </Button>
           </form>
+
+          {/* Google's own sign-in button (popup). onSuccess gives the ID token. */}
+          <div className="mt-4 flex justify-center">
+            <GoogleLogin
+              onSuccess={(cred) => handleGoogle(cred.credential)}
+              onError={() => setError("root", { message: "Google sign-in failed" })}
+            />
+          </div>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             No account yet?{" "}

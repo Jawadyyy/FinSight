@@ -18,6 +18,13 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return res.data;
 }
 
+// POST /auth/google -> { accessToken, user }  (verifies the Google ID token,
+// then behaves exactly like login). credential = the token from @react-oauth/google.
+export async function googleLogin(credential: string): Promise<AuthResponse> {
+  const res = await api.post<AuthResponse>("/google", { credential });
+  return res.data;
+}
+
 // GET /auth/me -> the current user (needs the access token in the header)
 export async function me(): Promise<User> {
   const res = await api.get<User>("/me");

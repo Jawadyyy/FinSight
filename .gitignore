@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local env (VITE_ vars are public, but keep .env local; commit .env.example)
+.env
