@@ -1,0 +1,60 @@
+import { Pencil, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Budget } from '@/types/budget';
+
+interface Props {
+  budget: Budget;
+  onEdit: (budget: Budget) => void;
+  onDelete: (id: string) => void;
+}
+
+export default function BudgetCard({ budget, onEdit, onDelete }: Props) {
+  const limit = Number(budget.limit);
+  const pct = limit > 0 ? Math.min((budget.spent / limit) * 100, 100) : 0;
+  const overBudget = budget.spent > limit;
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium">{budget.category}</CardTitle>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(budget)}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(budget.id)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">
+            ${budget.spent.toFixed(2)} / ${limit.toFixed(2)}
+          </span>
+          <span className={overBudget ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+            {pct.toFixed(0)}%
+          </span>
+        </div>
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${
+              overBudget ? 'bg-destructive' : pct > 80 ? 'bg-yellow-500' : 'bg-primary'
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        {overBudget && (
+          <p className="text-xs text-destructive">
+            Over budget by ${(budget.spent - limit).toFixed(2)}
+          </p>
+        )}
+        {!overBudget && budget.remaining > 0 && (
+          <p className="text-xs text-muted-foreground">
+            ${budget.remaining.toFixed(2)} remaining
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

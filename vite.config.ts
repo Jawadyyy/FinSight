@@ -16,6 +16,7 @@ export default defineConfig({
       // Same-origin to the browser, so the refresh cookie works.
       '/auth': 'http://localhost:3000',
       '/transactions': 'http://localhost:3000',
+      '/budgets': 'http://localhost:3000',
     },
   },
 })

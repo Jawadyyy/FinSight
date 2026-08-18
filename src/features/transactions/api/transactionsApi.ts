@@ -69,3 +69,10 @@ export async function updateTransaction(
 export async function deleteTransaction(id: string): Promise<void> {
   await http.delete(`/${id}`);
 }
+
+export async function uploadTransactions(file: File): Promise<{ imported: number; skipped: number }> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await http.post<{ imported: number; skipped: number }>('/upload', form);
+  return res.data;
+}
