@@ -1,6 +1,7 @@
 import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import type { Budget } from '@/types/budget';
 
 interface Props {
@@ -36,14 +37,10 @@ export default function BudgetCard({ budget, onEdit, onDelete }: Props) {
             {pct.toFixed(0)}%
           </span>
         </div>
-        <div className="h-2 rounded-full bg-muted overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all ${
-              overBudget ? 'bg-destructive' : pct > 80 ? 'bg-yellow-500' : 'bg-primary'
-            }`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
+        <Progress
+          value={pct}
+          className={`h-2 ${overBudget ? '[&>[data-slot=progress-indicator]]:bg-destructive' : pct > 80 ? '[&>[data-slot=progress-indicator]]:bg-yellow-500' : ''}`}
+        />
         {overBudget && (
           <p className="text-xs text-destructive">
             Over budget by ${(budget.spent - limit).toFixed(2)}

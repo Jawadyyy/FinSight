@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { Plus } from 'lucide-react';
 import {
   getBudgets,
@@ -72,22 +74,20 @@ export default function BudgetsPage() {
       </div>
 
       {budgets.length > 0 && (
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium">Total Budget</span>
-            <span className="text-muted-foreground">
-              ${totalSpent.toFixed(2)} / ${totalLimit.toFixed(2)}
-            </span>
-          </div>
-          <div className="h-3 rounded-full bg-muted overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${
-                totalSpent > totalLimit ? 'bg-destructive' : 'bg-primary'
-              }`}
-              style={{ width: `${totalLimit > 0 ? Math.min((totalSpent / totalLimit) * 100, 100) : 0}%` }}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="font-medium">Total Budget</span>
+              <span className="text-muted-foreground">
+                ${totalSpent.toFixed(2)} / ${totalLimit.toFixed(2)}
+              </span>
+            </div>
+            <Progress
+              value={totalLimit > 0 ? Math.min((totalSpent / totalLimit) * 100, 100) : 0}
+              className={`h-3 ${totalSpent > totalLimit ? '[&>[data-slot=progress-indicator]]:bg-destructive' : ''}`}
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {loading ? (
