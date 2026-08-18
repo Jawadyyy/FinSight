@@ -15,6 +15,7 @@ export default defineConfig({
       // Anything the frontend calls at /auth/* is forwarded to the backend.
       // Same-origin to the browser, so the refresh cookie works.
       '/auth': 'http://localhost:3000',
+      '/transactions': 'http://localhost:3000',
     },
   },
 })
