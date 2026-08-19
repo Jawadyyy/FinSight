@@ -1,0 +1,141 @@
+import { useCallback, useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { formatMoney } from '@/lib/currency';
+import { getOverview } from '../api/analyticsApi';
+import {
+  BudgetVsActual,
+  CategoryBreakdown,
+  IncomeVsExpenses,
+  SavingsOverTime,
+  SpendingTrend,
+} from '../components/charts';
+import type { AnalyticsOverview } from '@/types/analytics';
+
+const RANGES = [
+  { value: '3', label: 'Last 3 months' },
+  { value: '6', label: 'Last 6 months' },
+  { value: '12', label: 'Last 12 months' },
+];
+
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: 'income' | 'expense';
+}) {
+  const color =
+    tone === 'income' ? 'text-green-700' : tone === 'expense' ? 'text-destructive' : '';
+
+  return (
+    <div className="rounded-lg bg-muted/50 p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-medium tabular-nums ${color}`}>{value}</p>
+    </div>
+  );
+}
+
+function Panel({ title, subtitle, children }: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-medium">{title}</CardTitle>
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
+
+export default function AnalyticsPage() {
+  const [months, setMonths] = useState('6');
+  const [data, setData] = useState<AnalyticsOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setData(await getOverview({ months: Number(months) }));
+    } catch {
+      setError('Could not load analytics.');
+    } finally {
+      setLoading(false);
+    }
+  }, [months]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (loading) {
+    return <p className="py-8 text-center text-muted-foreground">Loading analytics...</p>;
+  }
+  if (error || !data) {
+    return <p className="py-8 text-center text-destructive">{error || 'No data.'}</p>;
+  }
+
+  const { totals } = data;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Analytics</h2>
+        <Select value={months} onValueChange={setMonths}>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {RANGES.map((r) => (
+              <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="Income" value={formatMoney(totals.income)} tone="income" />
+        <Stat label="Spending" value={formatMoney(totals.expense)} tone="expense" />
+        <Stat label="Net saved" value={formatMoney(totals.savings)} />
+        <Stat label="Savings rate" value={`${totals.savingsRate}%`} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel title="Income vs expenses" subtitle="Per month, transfers excluded">
+          <IncomeVsExpenses data={data.monthly} />
+        </Panel>
+
+        <Panel title="Spending by category" subtitle={`${data.range.from} to ${data.range.to}`}>
+          <CategoryBreakdown data={data.byCategory} />
+        </Panel>
+
+        <Panel title="Spending trend" subtitle="Daily spending across the range">
+          <SpendingTrend data={data.trend} />
+        </Panel>
+
+        <Panel title="Budget vs actual" subtitle={`For ${data.budgetVsActual.month}`}>
+          <BudgetVsActual data={data.budgetVsActual} />
+        </Panel>
+
+        <Panel
+          title="Savings over time"
+          subtitle="Running total of income minus spending"
+        >
+          <SavingsOverTime data={data.monthly} />
+        </Panel>
+      </div>
+    </div>
+  );
+}

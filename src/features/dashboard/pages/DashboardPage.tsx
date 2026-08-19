@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeftRight,
+  ChartColumnBig,
   LogOut,
   PiggyBank,
   Wallet,
@@ -27,12 +28,14 @@ import { useAuth } from "@/context/AuthContext";
 import { logout } from "@/features/auth/api/authApi";
 import TransactionsPage from "@/features/transactions/pages/TransactionsPage";
 import BudgetsPage from "@/features/budgets/pages/BudgetsPage";
+import AnalyticsPage from "@/features/analytics/pages/AnalyticsPage";
 
-type Page = "transactions" | "budgets";
+type Page = "transactions" | "budgets" | "analytics";
 
 const navItems: { key: Page; label: string; icon: typeof Wallet }[] = [
   { key: "transactions", label: "Transactions", icon: ArrowLeftRight },
   { key: "budgets", label: "Budgets", icon: PiggyBank },
+  { key: "analytics", label: "Analytics", icon: ChartColumnBig },
 ];
 
 export default function DashboardPage() {
@@ -108,6 +111,7 @@ export default function DashboardPage() {
           <div className="mx-auto max-w-5xl">
             {page === "transactions" && <TransactionsPage />}
             {page === "budgets" && <BudgetsPage />}
+            {page === "analytics" && <AnalyticsPage />}
           </div>
         </main>
       </SidebarInset>
