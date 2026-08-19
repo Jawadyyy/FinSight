@@ -1,12 +1,21 @@
 export type TransactionType = 'income' | 'expense' | 'transfer';
 
-export type TransactionCategory =
-  | 'Food'
-  | 'Shopping'
-  | 'Transport'
-  | 'Bills'
-  | 'Entertainment'
-  | 'Other';
+/**
+ * The single source of truth for categories — forms, filters and the colour
+ * map all read this, so adding one is a one-line change. Must match
+ * TransactionCategory on the backend.
+ */
+export const TRANSACTION_CATEGORIES = [
+  'Food',
+  'Shopping',
+  'Transport',
+  'Bills',
+  'Entertainment',
+  'Health',
+  'Other',
+] as const;
+
+export type TransactionCategory = (typeof TRANSACTION_CATEGORIES)[number];
 
 export interface Transaction {
   id: string;
@@ -20,6 +29,8 @@ export interface Transaction {
   balanceAfter?: number | null;
   confidence: number;
   needsReview: boolean;
+  categoryConfidence: number;
+  categorySource?: 'rule' | 'ai' | 'manual' | null;
   rawText?: string | null;
   category: TransactionCategory;
   type: TransactionType;
@@ -45,6 +56,13 @@ export interface TransactionFilters {
   to?: string;
   page?: number;
   limit?: number;
+}
+
+export interface CategorizeResult {
+  categorized: number;
+  byAi: number;
+  byRule: number;
+  aiEnabled: boolean;
 }
 
 export interface UploadResult {

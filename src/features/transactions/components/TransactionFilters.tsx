@@ -6,9 +6,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { TRANSACTION_CATEGORIES } from '@/types/transaction';
 import type { TransactionFilters as Filters } from '@/types/transaction';
 
-const categories = ['All', 'Food', 'Shopping', 'Transport', 'Bills', 'Entertainment', 'Other'] as const;
+const categories = ['All', ...TRANSACTION_CATEGORIES] as const;
 const types = ['All', 'income', 'expense', 'transfer'] as const;
 
 interface Props {

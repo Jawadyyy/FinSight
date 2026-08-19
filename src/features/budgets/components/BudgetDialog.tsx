@@ -18,15 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { TRANSACTION_CATEGORIES } from '@/types/transaction';
 import type { TransactionCategory } from '@/types/transaction';
 import type { Budget } from '@/types/budget';
 
-const categories: TransactionCategory[] = [
-  'Food', 'Shopping', 'Transport', 'Bills', 'Entertainment', 'Other',
-];
+const categories: readonly TransactionCategory[] = TRANSACTION_CATEGORIES;
 
 const schema = z.object({
-  category: z.enum(['Food', 'Shopping', 'Transport', 'Bills', 'Entertainment', 'Other']),
+  category: z.enum(TRANSACTION_CATEGORIES),
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Must be YYYY-MM'),
   limit: z.number().min(0.01, 'Must be > 0'),
 });

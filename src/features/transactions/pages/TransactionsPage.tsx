@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Upload } from 'lucide-react';
+import { Plus, Sparkles, Upload } from 'lucide-react';
 import {
   getTransactions,
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  categorizeTransactions,
 } from '../api/transactionsApi';
 import TransactionTable from '../components/TransactionTable';
 import TransactionDialog from '../components/TransactionDialog';
@@ -21,6 +22,8 @@ export default function TransactionsPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
+  const [categorizing, setCategorizing] = useState(false);
+  const [categorizeNote, setCategorizeNote] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,11 +64,41 @@ export default function TransactionsPage() {
     await load();
   };
 
+  const handleCategorize = async () => {
+    setCategorizing(true);
+    setCategorizeNote('');
+    try {
+      const result = await categorizeTransactions();
+      await load();
+
+      if (result.categorized === 0) {
+        setCategorizeNote(
+          result.aiEnabled
+            ? 'Everything is already categorized.'
+            : 'Nothing matched a rule. Add GEMINI_API_KEY to categorize the rest with AI.',
+        );
+      } else {
+        const parts = [`Categorized ${result.categorized}`];
+        if (result.byAi) parts.push(`${result.byAi} by AI`);
+        if (result.byRule) parts.push(`${result.byRule} by rules`);
+        setCategorizeNote(`${parts.join(' — ')}.`);
+      }
+    } catch {
+      setCategorizeNote('Categorization failed. Your transactions were left unchanged.');
+    } finally {
+      setCategorizing(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Transactions</h2>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleCategorize} disabled={categorizing}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            {categorizing ? 'Categorizing...' : 'Categorize'}
+          </Button>
           <Button variant="outline" onClick={() => setUploadOpen(true)}>
             <Upload className="mr-2 h-4 w-4" /> Upload Statement
           </Button>
@@ -74,6 +107,10 @@ export default function TransactionsPage() {
           </Button>
         </div>
       </div>
+
+      {categorizeNote && (
+        <p className="text-sm text-muted-foreground">{categorizeNote}</p>
+      )}
 
       <TransactionFilters filters={filters} onChange={setFilters} />
 

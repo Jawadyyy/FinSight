@@ -5,6 +5,7 @@ import type {
   TransactionsResponse,
   TransactionFilters,
   UploadResult,
+  CategorizeResult,
 } from '@/types/transaction';
 
 const http = axios.create({
@@ -69,6 +70,13 @@ export async function updateTransaction(
 
 export async function deleteTransaction(id: string): Promise<void> {
   await http.delete(`/${id}`);
+}
+
+export async function categorizeTransactions(all = false): Promise<CategorizeResult> {
+  const res = await http.post<CategorizeResult>('/categorize', null, {
+    params: all ? { all: 'true' } : {},
+  });
+  return res.data;
 }
 
 export async function uploadTransactions(file: File): Promise<UploadResult> {
