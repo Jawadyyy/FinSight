@@ -6,8 +6,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Upload } from 'lucide-react';
+import { AlertTriangle, Upload } from 'lucide-react';
 import { uploadTransactions } from '../api/transactionsApi';
+import type { UploadResult } from '@/types/transaction';
 
 interface Props {
   open: boolean;
@@ -19,7 +20,7 @@ export default function UploadDialog({ open, onClose, onSuccess }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<{ imported: number; skipped: number } | null>(null);
+  const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState('');
 
   const reset = () => {
@@ -87,9 +88,35 @@ export default function UploadDialog({ open, onClose, onSuccess }: Props) {
           )}
 
           {result && (
-            <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">
-              Imported {result.imported} transactions.
-              {result.skipped > 0 && ` Skipped ${result.skipped} rows.`}
+            <div className="space-y-2">
+              <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">
+                Imported {result.imported} transactions.
+                {result.duplicates > 0 &&
+                  ` Skipped ${result.duplicates} already imported.`}
+                {result.skipped > 0 && ` Could not read ${result.skipped} rows.`}
+              </div>
+
+              {result.needsReview > 0 && (
+                <div className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-900">
+                  {result.needsReview} transaction
+                  {result.needsReview === 1 ? '' : 's'} need review — check the
+                  highlighted rows.
+                </div>
+              )}
+
+              {result.warnings.length > 0 && (
+                <div className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-900">
+                  <div className="mb-1 flex items-center gap-1.5 font-medium">
+                    <AlertTriangle className="h-4 w-4" />
+                    Statement discrepancies
+                  </div>
+                  <ul className="list-disc space-y-1 pl-5">
+                    {result.warnings.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 

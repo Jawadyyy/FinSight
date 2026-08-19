@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Plus } from 'lucide-react';
+import { formatMoney } from '@/lib/currency';
 import {
   getBudgets,
   createBudget,
@@ -79,7 +80,7 @@ export default function BudgetsPage() {
             <div className="flex justify-between text-sm mb-2">
               <span className="font-medium">Total Budget</span>
               <span className="text-muted-foreground">
-                ${totalSpent.toFixed(2)} / ${totalLimit.toFixed(2)}
+                {formatMoney(totalSpent)} / {formatMoney(totalLimit)}
               </span>
             </div>
             <Progress

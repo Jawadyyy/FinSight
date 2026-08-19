@@ -28,7 +28,7 @@ const schema = z.object({
   amount: z.number().min(0.01, 'Amount must be > 0'),
   description: z.string().min(1, 'Required'),
   category: z.enum(['Food', 'Shopping', 'Transport', 'Bills', 'Entertainment', 'Other']),
-  type: z.enum(['income', 'expense']),
+  type: z.enum(['income', 'expense', 'transfer']),
   date: z.string().min(1, 'Required'),
 });
 
@@ -121,6 +121,7 @@ export default function TransactionDialog({ open, onClose, onSubmit, transaction
                 <SelectContent>
                   <SelectItem value="expense">Expense</SelectItem>
                   <SelectItem value="income">Income</SelectItem>
+                  <SelectItem value="transfer">Transfer</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -9,7 +9,7 @@ import {
 import type { TransactionFilters as Filters } from '@/types/transaction';
 
 const categories = ['All', 'Food', 'Shopping', 'Transport', 'Bills', 'Entertainment', 'Other'] as const;
-const types = ['All', 'income', 'expense'] as const;
+const types = ['All', 'income', 'expense', 'transfer'] as const;
 
 interface Props {
   filters: Filters;

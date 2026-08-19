@@ -4,6 +4,7 @@ import type {
   Transaction,
   TransactionsResponse,
   TransactionFilters,
+  UploadResult,
 } from '@/types/transaction';
 
 const http = axios.create({
@@ -70,9 +71,9 @@ export async function deleteTransaction(id: string): Promise<void> {
   await http.delete(`/${id}`);
 }
 
-export async function uploadTransactions(file: File): Promise<{ imported: number; skipped: number }> {
+export async function uploadTransactions(file: File): Promise<UploadResult> {
   const form = new FormData();
   form.append('file', file);
-  const res = await http.post<{ imported: number; skipped: number }>('/upload', form);
+  const res = await http.post<UploadResult>('/upload', form);
   return res.data;
 }

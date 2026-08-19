@@ -2,6 +2,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { formatMoney } from '@/lib/currency';
 import type { Budget } from '@/types/budget';
 
 interface Props {
@@ -31,7 +32,7 @@ export default function BudgetCard({ budget, onEdit, onDelete }: Props) {
       <CardContent className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">
-            ${budget.spent.toFixed(2)} / ${limit.toFixed(2)}
+            {formatMoney(budget.spent)} / {formatMoney(limit)}
           </span>
           <span className={overBudget ? 'text-destructive font-medium' : 'text-muted-foreground'}>
             {pct.toFixed(0)}%
@@ -43,12 +44,12 @@ export default function BudgetCard({ budget, onEdit, onDelete }: Props) {
         />
         {overBudget && (
           <p className="text-xs text-destructive">
-            Over budget by ${(budget.spent - limit).toFixed(2)}
+            Over budget by {formatMoney(budget.spent - limit)}
           </p>
         )}
         {!overBudget && budget.remaining > 0 && (
           <p className="text-xs text-muted-foreground">
-            ${budget.remaining.toFixed(2)} remaining
+            {formatMoney(budget.remaining)} remaining
           </p>
         )}
       </CardContent>
