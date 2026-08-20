@@ -7,6 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CardsSkeleton } from '@/components/TableSkeleton';
 import { formatMoney } from '@/lib/currency';
 import { getOverview } from '../api/analyticsApi';
 import {
@@ -80,11 +82,13 @@ export default function AnalyticsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) {
-    return <p className="py-8 text-center text-muted-foreground">Loading analytics...</p>;
-  }
+  if (loading) return <CardsSkeleton />;
   if (error || !data) {
-    return <p className="py-8 text-center text-destructive">{error || 'No data.'}</p>;
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{error || 'No analytics data yet.'}</AlertDescription>
+      </Alert>
+    );
   }
 
   const { totals } = data;

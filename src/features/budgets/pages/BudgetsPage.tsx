@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { TableSkeleton } from '@/components/TableSkeleton';
 import { Plus } from 'lucide-react';
 import { formatMoney } from '@/lib/currency';
 import {
@@ -92,7 +93,7 @@ export default function BudgetsPage() {
       )}
 
       {loading ? (
-        <p className="py-8 text-center text-muted-foreground">Loading...</p>
+        <TableSkeleton rows={3} />
       ) : budgets.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">
           No budgets set for {month}. Click "Set Budget" to get started.

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TableSkeleton } from '@/components/TableSkeleton';
 import { Plus, Sparkles, Upload } from 'lucide-react';
 import {
   getTransactions,
@@ -109,13 +111,16 @@ export default function TransactionsPage() {
       </div>
 
       {categorizeNote && (
-        <p className="text-sm text-muted-foreground">{categorizeNote}</p>
+        <Alert>
+          <Sparkles className="h-4 w-4" />
+          <AlertDescription>{categorizeNote}</AlertDescription>
+        </Alert>
       )}
 
       <TransactionFilters filters={filters} onChange={setFilters} />
 
       {loading ? (
-        <p className="py-8 text-center text-muted-foreground">Loading...</p>
+        <TableSkeleton />
       ) : data ? (
         <>
           <TransactionTable

@@ -5,12 +5,21 @@ import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
@@ -19,15 +28,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TRANSACTION_CATEGORIES } from '@/types/transaction';
-import type { TransactionCategory } from '@/types/transaction';
 import type { Budget } from '@/types/budget';
-
-const categories: readonly TransactionCategory[] = TRANSACTION_CATEGORIES;
 
 const schema = z.object({
   category: z.enum(TRANSACTION_CATEGORIES),
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Must be YYYY-MM'),
-  limit: z.number().min(0.01, 'Must be > 0'),
+  limit: z.number().min(0.01, 'Must be greater than 0'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -40,37 +46,29 @@ interface Props {
   currentMonth: string;
 }
 
-export default function BudgetDialog({ open, onClose, onSubmit, budget, currentMonth }: Props) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
+export default function BudgetDialog({
+  open,
+  onClose,
+  onSubmit,
+  budget,
+  currentMonth,
+}: Props) {
+  const form = useForm<FormData>({
     resolver: zodResolver(schema) as any,
-    defaultValues: {
-      category: 'Food',
-      month: currentMonth,
-      limit: 0,
-    },
+    defaultValues: { category: 'Food', month: currentMonth, limit: 0 },
   });
+  const { formState: { isSubmitting }, reset } = form;
 
   useEffect(() => {
-    if (budget) {
-      reset({
-        category: budget.category,
-        month: budget.month,
-        limit: Number(budget.limit),
-      });
-    } else {
-      reset({
-        category: 'Food',
-        month: currentMonth,
-        limit: 0,
-      });
-    }
+    reset(
+      budget
+        ? {
+            category: budget.category,
+            month: budget.month,
+            limit: Number(budget.limit),
+          }
+        : { category: 'Food', month: currentMonth, limit: 0 },
+    );
   }, [budget, reset, currentMonth]);
 
   const handle = async (data: FormData) => {
@@ -82,57 +80,86 @@ export default function BudgetDialog({ open, onClose, onSubmit, budget, currentM
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{budget ? 'Edit Budget' : 'Set Budget'}</DialogTitle>
+          <DialogTitle>{budget ? 'Edit budget' : 'Set budget'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handle)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>Category</Label>
-              <Select
-                value={watch('category')}
-                onValueChange={(v) => setValue('category', v as TransactionCategory)}
-                disabled={!!budget}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="month">Month</Label>
-              <Input
-                id="month"
-                type="month"
-                {...register('month')}
-                disabled={!!budget}
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handle)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={!!budget}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TRANSACTION_CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.month && <p className="text-sm text-destructive">{errors.month.message}</p>}
+
+              <FormField
+                control={form.control}
+                name="month"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Month</FormLabel>
+                    <FormControl>
+                      <Input type="month" disabled={!!budget} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="limit">Budget Limit ($)</Label>
-            <Input
-              id="limit"
-              type="number"
-              step="0.01"
-              {...register('limit', { valueAsNumber: true })}
+            <FormField
+              control={form.control}
+              name="limit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Monthly limit</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Spending in this category is measured against the limit.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.limit && <p className="text-sm text-destructive">{errors.limit.message}</p>}
-          </div>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : budget ? 'Update' : 'Set Budget'}
-            </Button>
-          </div>
-        </form>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : budget ? 'Update' : 'Set budget'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

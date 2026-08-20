@@ -1,30 +1,32 @@
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GoogleLogin } from "@react-oauth/google";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useAuth } from "@/context/AuthContext";
 import { login, googleLogin } from "../api/authApi";
 import { loginSchema, type LoginFields } from "../schemas/authSchema";
 
 export default function LoginForm() {
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFields>({
+  const form = useForm<LoginFields>({
     defaultValues: { email: "", password: "" },
     resolver: zodResolver(loginSchema),
   });
+  const {
+    setError,
+    formState: { errors, isSubmitting },
+  } = form;
 
   const { setAuth } = useAuth();
   const navigate = useNavigate();
@@ -54,65 +56,67 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl">Login</CardTitle>
-        </CardHeader>
-
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} noValidate className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                {...register("email")}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                {...register("password")}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-
-            {errors.root && (
-              <p className="text-sm text-destructive">{errors.root.message}</p>
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="grid gap-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email address</FormLabel>
+                <FormControl>
+                  <Input type="email" autoComplete="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
+          />
 
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "Loading..." : "Sign In"}
-            </Button>
-          </form>
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input type="password" autoComplete="current-password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          {/* Google's own sign-in button (popup). onSuccess gives the ID token. */}
-          <div className="mt-4 flex justify-center">
-            <GoogleLogin
-              onSuccess={(cred) => handleGoogle(cred.credential)}
-              onError={() => setError("root", { message: "Google sign-in failed" })}
-            />
-          </div>
+          {errors.root && (
+            <Alert variant="destructive">
+              <AlertDescription>{errors.root.message}</AlertDescription>
+            </Alert>
+          )}
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            No account yet?{" "}
-            <Link to="/register" className="font-medium text-primary hover:underline">
-              Register now
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-1 w-full bg-[#644fef] text-white hover:bg-[#5540d8]"
+          >
+            {isSubmitting ? "Signing in..." : "Log in"}
+            {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
+          </Button>
+        </form>
+      </Form>
+
+      <div className="my-5 flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs text-muted-foreground">or</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      {/* Google's own sign-in button (popup). onSuccess gives the ID token. */}
+      <div className="flex justify-center">
+        <GoogleLogin
+          onSuccess={(cred) => handleGoogle(cred.credential)}
+          onError={() => setError("root", { message: "Google sign-in failed" })}
+        />
+      </div>
+    </>
   );
 }

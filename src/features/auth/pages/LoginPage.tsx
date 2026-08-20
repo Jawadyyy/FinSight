@@ -1,7 +1,24 @@
+import { Link } from "react-router-dom";
+import AuthSplit from "../components/AuthSplit";
 import LoginForm from "../components/LoginForm";
 
-// The route screen for /login. For now it just shows the form; later it can
-// add a header, layout, etc.
+// /login — form on the left, product panel on the right.
 export default function LoginPage() {
-  return <LoginForm />;
+  return (
+    <AuthSplit
+      panel="right"
+      title="Welcome back"
+      subtitle="Please enter your details"
+      footer={
+        <>
+          Don&apos;t have an account?{" "}
+          <Link to="/register" className="font-semibold text-[#644fef] hover:underline">
+            Sign up
+          </Link>
+        </>
+      }
+    >
+      <LoginForm />
+    </AuthSplit>
+  );
 }

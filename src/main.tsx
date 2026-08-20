@@ -6,7 +6,6 @@ import { AuthProvider } from './context/AuthContext'
 import './index.css'
 import App from './App.tsx'
 
-// The Google client id is public — safe to expose in the frontend bundle.
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string
 
 createRoot(document.getElementById('root')!).render(

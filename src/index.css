@@ -127,3 +127,31 @@
     @apply font-sans;
     }
 }
+
+/* Landing page only: a heavier geometric face for the hero headline. The app
+   itself stays on the default sans, where legibility beats personality. */
+.font-display {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rise {
+  animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* The fanned cards settle into place, so the arc reads as one movement. */
+.deal {
+  animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .deal {
+    animation: none;
+  }
+}

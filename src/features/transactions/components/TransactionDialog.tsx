@@ -5,12 +5,20 @@ import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
@@ -19,12 +27,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TRANSACTION_CATEGORIES } from '@/types/transaction';
-import type { Transaction, TransactionCategory, TransactionType } from '@/types/transaction';
-
-const categories: readonly TransactionCategory[] = TRANSACTION_CATEGORIES;
+import type { Transaction } from '@/types/transaction';
 
 const schema = z.object({
-  amount: z.number().min(0.01, 'Amount must be > 0'),
+  amount: z.number().min(0.01, 'Amount must be greater than 0'),
   description: z.string().min(1, 'Required'),
   category: z.enum(TRANSACTION_CATEGORIES),
   type: z.enum(['income', 'expense', 'transfer']),
@@ -32,6 +38,14 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
+
+const emptyValues: FormData = {
+  amount: 0,
+  description: '',
+  category: 'Other',
+  type: 'expense',
+  date: new Date().toISOString().slice(0, 10),
+};
 
 interface Props {
   open: boolean;
@@ -41,42 +55,24 @@ interface Props {
 }
 
 export default function TransactionDialog({ open, onClose, onSubmit, transaction }: Props) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
+  const form = useForm<FormData>({
     resolver: zodResolver(schema) as any,
-    defaultValues: {
-      amount: 0,
-      description: '',
-      category: 'Other',
-      type: 'expense',
-      date: new Date().toISOString().slice(0, 10),
-    },
+    defaultValues: emptyValues,
   });
+  const { formState: { isSubmitting }, reset } = form;
 
   useEffect(() => {
-    if (transaction) {
-      reset({
-        amount: Number(transaction.amount),
-        description: transaction.description,
-        category: transaction.category,
-        type: transaction.type,
-        date: transaction.date,
-      });
-    } else {
-      reset({
-        amount: 0,
-        description: '',
-        category: 'Other',
-        type: 'expense',
-        date: new Date().toISOString().slice(0, 10),
-      });
-    }
+    reset(
+      transaction
+        ? {
+            amount: Number(transaction.amount),
+            description: transaction.description,
+            category: transaction.category,
+            type: transaction.type,
+            date: transaction.date,
+          }
+        : emptyValues,
+    );
   }, [transaction, reset]);
 
   const handle = async (data: FormData) => {
@@ -88,64 +84,118 @@ export default function TransactionDialog({ open, onClose, onSubmit, transaction
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{transaction ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle>
+          <DialogTitle>{transaction ? 'Edit transaction' : 'Add transaction'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handle)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="amount">Amount</Label>
-              <Input id="amount" type="number" step="0.01" {...register('amount', { valueAsNumber: true })} />
-              {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="date">Date</Label>
-              <Input id="date" type="date" {...register('date')} />
-              {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
-            </div>
-          </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="description">Description</Label>
-            <Input id="description" {...register('description')} />
-            {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
-          </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handle)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>Type</Label>
-              <Select value={watch('type')} onValueChange={(v) => setValue('type', v as TransactionType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="transfer">Transfer</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <div className="space-y-1">
-              <Label>Category</Label>
-              <Select value={watch('category')} onValueChange={(v) => setValue('category', v as TransactionCategory)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : transaction ? 'Update' : 'Add'}
-            </Button>
-          </div>
-        </form>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="expense">Expense</SelectItem>
+                        <SelectItem value="income">Income</SelectItem>
+                        <SelectItem value="transfer">Transfer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TRANSACTION_CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : transaction ? 'Update' : 'Add'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
