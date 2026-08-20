@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeftRight,
   ChartColumnBig,
+  FileDown,
   House,
   LogOut,
   PiggyBank,
@@ -42,16 +43,18 @@ import TransactionsPage from "@/features/transactions/pages/TransactionsPage";
 import BudgetsPage from "@/features/budgets/pages/BudgetsPage";
 import AnalyticsPage from "@/features/analytics/pages/AnalyticsPage";
 import OverviewPage from "@/features/overview/pages/OverviewPage";
+import ReportsPage from "@/features/reports/pages/ReportsPage";
 
 const BRAND = "#644fef";
 
-export type Page = "home" | "transactions" | "budgets" | "analytics";
+export type Page = "home" | "transactions" | "budgets" | "analytics" | "reports";
 
 const navItems: { key: Page; label: string; icon: typeof Wallet }[] = [
   { key: "home", label: "Dashboard", icon: House },
   { key: "transactions", label: "Transactions", icon: ArrowLeftRight },
   { key: "budgets", label: "Budgets", icon: PiggyBank },
   { key: "analytics", label: "Analytics", icon: ChartColumnBig },
+  { key: "reports", label: "Reports", icon: FileDown },
 ];
 
 const PAGE_TITLE: Record<Page, string> = {
@@ -59,6 +62,7 @@ const PAGE_TITLE: Record<Page, string> = {
   transactions: "Transactions",
   budgets: "Budgets",
   analytics: "Analytics",
+  reports: "Reports",
 };
 
 export default function DashboardPage() {
@@ -196,6 +200,7 @@ export default function DashboardPage() {
             {page === "transactions" && <TransactionsPage />}
             {page === "budgets" && <BudgetsPage />}
             {page === "analytics" && <AnalyticsPage />}
+            {page === "reports" && <ReportsPage />}
           </div>
         </main>
       </SidebarInset>

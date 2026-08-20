@@ -18,6 +18,8 @@ export default defineConfig({
       '/transactions': 'http://localhost:3000',
       '/budgets': 'http://localhost:3000',
       '/analytics': 'http://localhost:3000',
+      '/insights': 'http://localhost:3000',
+      '/reports': 'http://localhost:3000',
     },
   },
 })

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { CardsSkeleton } from '@/components/TableSkeleton';
+import InsightsCard from '@/features/insights/components/InsightsCard';
 import {
   AlertTriangle,
   ArrowRight,
@@ -238,6 +239,8 @@ export default function OverviewPage({ onNavigate }: Props) {
           hint={`${data.byCategory.length} categories in use`}
         />
       </div>
+
+      <InsightsCard month={data.budgetVsActual.month} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="shadow-none lg:col-span-2">
