@@ -8,6 +8,7 @@ import {
   LogOut,
   PiggyBank,
   Search,
+  Sparkles,
   Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -44,13 +44,21 @@ import BudgetsPage from "@/features/budgets/pages/BudgetsPage";
 import AnalyticsPage from "@/features/analytics/pages/AnalyticsPage";
 import OverviewPage from "@/features/overview/pages/OverviewPage";
 import ReportsPage from "@/features/reports/pages/ReportsPage";
+import InsightsPage from "@/features/insights/pages/InsightsPage";
 
 const BRAND = "#644fef";
 
-export type Page = "home" | "transactions" | "budgets" | "analytics" | "reports";
+export type Page =
+  | "home"
+  | "insights"
+  | "transactions"
+  | "budgets"
+  | "analytics"
+  | "reports";
 
 const navItems: { key: Page; label: string; icon: typeof Wallet }[] = [
   { key: "home", label: "Dashboard", icon: House },
+  { key: "insights", label: "Insights", icon: Sparkles },
   { key: "transactions", label: "Transactions", icon: ArrowLeftRight },
   { key: "budgets", label: "Budgets", icon: PiggyBank },
   { key: "analytics", label: "Analytics", icon: ChartColumnBig },
@@ -59,6 +67,7 @@ const navItems: { key: Page; label: string; icon: typeof Wallet }[] = [
 
 const PAGE_TITLE: Record<Page, string> = {
   home: "Dashboard",
+  insights: "Insights",
   transactions: "Transactions",
   budgets: "Budgets",
   analytics: "Analytics",
@@ -103,7 +112,6 @@ export default function DashboardPage() {
 
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Menu</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {navItems.map((item) => {
@@ -197,6 +205,7 @@ export default function DashboardPage() {
               {PAGE_TITLE[page]}
             </div>
             {page === "home" && <OverviewPage onNavigate={setPage} />}
+            {page === "insights" && <InsightsPage />}
             {page === "transactions" && <TransactionsPage />}
             {page === "budgets" && <BudgetsPage />}
             {page === "analytics" && <AnalyticsPage />}

@@ -74,6 +74,17 @@ export async function downloadTransactionsCsv(filters: CsvFilters = {}) {
   );
 }
 
+export async function downloadTransactionsXlsx(filters: CsvFilters = {}) {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
+  );
+  const res = await http.get('/transactions.xlsx', { params, responseType: 'blob' });
+  save(
+    res.data as Blob,
+    filenameFrom(res.headers['content-disposition'], 'finsight-transactions.xlsx'),
+  );
+}
+
 export async function downloadMonthlyPdf(month: string) {
   const res = await http.get('/monthly.pdf', {
     params: { month },

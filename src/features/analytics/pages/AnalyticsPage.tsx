@@ -9,7 +9,11 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CardsSkeleton } from '@/components/TableSkeleton';
+import { StatCard } from '@/components/StatCard';
+import { Percent, PiggyBank, TrendingDown, TrendingUp } from 'lucide-react';
 import { formatMoney } from '@/lib/currency';
+
+const BRAND = '#644fef';
 import { getOverview } from '../api/analyticsApi';
 import {
   BudgetVsActual,
@@ -25,26 +29,6 @@ const RANGES = [
   { value: '6', label: 'Last 6 months' },
   { value: '12', label: 'Last 12 months' },
 ];
-
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: 'income' | 'expense';
-}) {
-  const color =
-    tone === 'income' ? 'text-green-700' : tone === 'expense' ? 'text-destructive' : '';
-
-  return (
-    <div className="rounded-lg bg-muted/50 p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-2xl font-medium tabular-nums ${color}`}>{value}</p>
-    </div>
-  );
-}
 
 function Panel({ title, subtitle, children }: {
   title: string;
@@ -109,11 +93,35 @@ export default function AnalyticsPage() {
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Income" value={formatMoney(totals.income)} tone="income" />
-        <Stat label="Spending" value={formatMoney(totals.expense)} tone="expense" />
-        <Stat label="Net saved" value={formatMoney(totals.savings)} />
-        <Stat label="Savings rate" value={`${totals.savingsRate}%`} />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Income"
+          value={formatMoney(totals.income)}
+          icon={TrendingUp}
+          accent="#1baf7a"
+          hint={`${data.range.from} to ${data.range.to}`}
+        />
+        <StatCard
+          label="Spending"
+          value={formatMoney(totals.expense)}
+          icon={TrendingDown}
+          accent="#e34948"
+          hint={`Across ${data.monthly.length} months`}
+        />
+        <StatCard
+          label="Net saved"
+          value={formatMoney(totals.savings)}
+          icon={PiggyBank}
+          accent={BRAND}
+          hint={totals.savings < 0 ? 'You spent more than you earned' : 'Income minus spending'}
+        />
+        <StatCard
+          label="Savings rate"
+          value={`${totals.savingsRate}%`}
+          icon={Percent}
+          accent="#2a78d6"
+          hint={totals.savingsRate >= 20 ? 'Healthy' : 'Room to improve'}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

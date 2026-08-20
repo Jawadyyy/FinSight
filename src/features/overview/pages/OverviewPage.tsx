@@ -19,13 +19,19 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { CardsSkeleton } from '@/components/TableSkeleton';
-import InsightsCard from '@/features/insights/components/InsightsCard';
+import { StatCard } from '@/components/StatCard';
 import {
   AlertTriangle,
   ArrowRight,
   ArrowUpRight,
   ArrowDownRight,
+  PiggyBank,
+  Receipt,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
   Upload,
+  Wallet,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/currency';
 import { getOverview } from '@/features/analytics/api/analyticsApi';
@@ -64,57 +70,8 @@ function delta(current: number, previous: number): number | null {
   return Math.round(((current - previous) / previous) * 1000) / 10;
 }
 
-function Stat({
-  label,
-  value,
-  change,
-  /** For spending, a fall is good news — so the colour cannot follow the sign alone. */
-  goodWhenDown = false,
-  hint,
-}: {
-  label: string;
-  value: string;
-  change?: number | null;
-  goodWhenDown?: boolean;
-  hint?: string;
-}) {
-  const up = (change ?? 0) > 0;
-  const good = change == null ? null : goodWhenDown ? !up : up;
-
-  return (
-    <Card className="shadow-none">
-      <CardContent className="p-5">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-
-        <div className="mt-3 flex items-center gap-2">
-          {change != null ? (
-            <>
-              <span
-                className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-medium ${
-                  good ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
-                }`}
-              >
-                {up ? (
-                  <ArrowUpRight className="h-3 w-3" />
-                ) : (
-                  <ArrowDownRight className="h-3 w-3" />
-                )}
-                {Math.abs(change)}%
-              </span>
-              <span className="text-xs text-muted-foreground">Since last month</span>
-            </>
-          ) : (
-            <span className="text-xs text-muted-foreground">{hint ?? '—'}</span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 interface Props {
-  onNavigate: (page: 'transactions' | 'budgets' | 'analytics') => void;
+  onNavigate: (page: 'transactions' | 'budgets' | 'analytics' | 'insights') => void;
 }
 
 export default function OverviewPage({ onNavigate }: Props) {
@@ -196,51 +153,64 @@ export default function OverviewPage({ onNavigate }: Props) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl font-bold">Dashboard overview</h2>
+          <h2 className="font-display text-2xl font-bold">Dashboard</h2>
           <p className="text-sm text-muted-foreground">
             Here&apos;s what happened to your money in {MONTH_NAMES[month - 1]} {year}.
           </p>
         </div>
-        <Select value={months} onValueChange={setMonths}>
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {RANGES.map((r) => (
-              <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => onNavigate('insights')}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            View insights
+          </Button>
+          <Select value={months} onValueChange={setMonths}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RANGES.map((r) => (
+                <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat
+        <StatCard
           label="Total spending"
           value={formatMoney(spent)}
+          icon={TrendingDown}
+          accent="#e34948"
           change={lastMonth ? delta(spent, lastMonth.expense) : null}
           goodWhenDown
           hint="No earlier month to compare"
         />
-        <Stat
+        <StatCard
           label="Total income"
           value={formatMoney(thisMonth!.income)}
+          icon={TrendingUp}
+          accent="#1baf7a"
           change={lastMonth ? delta(thisMonth!.income, lastMonth.income) : null}
           hint="No earlier month to compare"
         />
-        <Stat
+        <StatCard
           label="Net saved"
           value={formatMoney(thisMonth!.savings)}
+          icon={PiggyBank}
+          accent={BRAND}
           change={lastMonth ? delta(thisMonth!.savings, lastMonth.savings) : null}
           hint="No earlier month to compare"
         />
-        <Stat
+        <StatCard
           label="Transactions"
           value={String(total)}
+          icon={Receipt}
+          accent="#888780"
           hint={`${data.byCategory.length} categories in use`}
         />
       </div>
-
-      <InsightsCard month={data.budgetVsActual.month} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="shadow-none lg:col-span-2">

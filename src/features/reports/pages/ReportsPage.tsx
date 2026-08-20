@@ -13,7 +13,11 @@ import {
 } from '@/components/ui/select';
 import { Download, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 import { TRANSACTION_CATEGORIES } from '@/types/transaction';
-import { downloadMonthlyPdf, downloadTransactionsCsv } from '../api/reportsApi';
+import {
+  downloadMonthlyPdf,
+  downloadTransactionsCsv,
+  downloadTransactionsXlsx,
+} from '../api/reportsApi';
 
 const BRAND = '#644fef';
 const ALL = 'all';
@@ -27,10 +31,17 @@ export default function ReportsPage() {
   const [category, setCategory] = useState(ALL);
   const [type, setType] = useState(ALL);
 
-  const [busy, setBusy] = useState<'pdf' | 'csv' | null>(null);
+  const [busy, setBusy] = useState<'pdf' | 'csv' | 'xlsx' | null>(null);
   const [error, setError] = useState('');
 
-  const run = async (kind: 'pdf' | 'csv', task: () => Promise<void>) => {
+  const filters = () => ({
+    from: from || undefined,
+    to: to || undefined,
+    category: category === ALL ? undefined : category,
+    type: type === ALL ? undefined : type,
+  });
+
+  const run = async (kind: 'pdf' | 'csv' | 'xlsx', task: () => Promise<void>) => {
     setBusy(kind);
     setError('');
     try {
@@ -177,36 +188,50 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={busy !== null}
-              onClick={() =>
-                run('csv', () =>
-                  downloadTransactionsCsv({
-                    from: from || undefined,
-                    to: to || undefined,
-                    category: category === ALL ? undefined : category,
-                    type: type === ALL ? undefined : type,
-                  }),
-                )
-              }
-            >
-              {busy === 'csv' ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Preparing CSV...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export CSV
-                </>
-              )}
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                className="w-full text-white"
+                style={{ backgroundColor: BRAND }}
+                disabled={busy !== null}
+                onClick={() => run('xlsx', () => downloadTransactionsXlsx(filters()))}
+              >
+                {busy === 'xlsx' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Preparing...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Excel (.xlsx)
+                  </>
+                )}
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={busy !== null}
+                onClick={() => run('csv', () => downloadTransactionsCsv(filters()))}
+              >
+                {busy === 'csv' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Preparing...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    CSV
+                  </>
+                )}
+              </Button>
+            </div>
 
             <p className="text-xs text-muted-foreground">
-              Leave the dates empty to export everything.
+              Excel keeps column widths and date formatting. Choose CSV for
+              importing into another tool. Leave the dates empty to export
+              everything.
             </p>
           </CardContent>
         </Card>
