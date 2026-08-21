@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
@@ -193,22 +195,27 @@ function FactCard({ fact, currency }: { fact: InsightFact; currency: string }) {
   );
 }
 
-export default function InsightsPage() {
+export default function InsightsPage({ onNavigate }: { onNavigate?: (page: 'plan') => void }) {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [data, setData] = useState<Insights | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       setError('');
+      setLocked(false);
       try {
         const result = await getInsights(month);
         if (!cancelled) setData(result);
-      } catch {
-        if (!cancelled) setError('Could not load insights for this month.');
+      } catch (err) {
+        if (cancelled) return;
+        // 403 means the plan does not include insights — an upsell, not a fault.
+        if (axios.isAxiosError(err) && err.response?.status === 403) setLocked(true);
+        else setError('Could not load insights for this month.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -252,13 +259,41 @@ export default function InsightsPage() {
         </div>
       )}
 
+      {!loading && locked && (
+        <Card className="border-none shadow-none" style={{ backgroundColor: `${BRAND}0f` }}>
+          <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
+            <span
+              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{ backgroundColor: BRAND }}
+            >
+              <Sparkles className="h-6 w-6 text-white" />
+            </span>
+            <div className="max-w-md">
+              <h3 className="font-display text-lg font-bold">AI insights are a Pro feature</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Pro reads your month and writes it back to you in plain language —
+                what changed, which budget slipped, and the one expense worth a
+                second look. Your charts and budgets stay free.
+              </p>
+            </div>
+            <Button
+              className="text-white"
+              style={{ backgroundColor: BRAND }}
+              onClick={() => onNavigate?.('plan')}
+            >
+              See plans
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {!loading && error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      {!loading && !error && data && data.facts.length === 0 && (
+      {!loading && !error && !locked && data && data.facts.length === 0 && (
         <Card className="shadow-none">
           <CardContent className="py-16 text-center">
             <Sparkles className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
@@ -270,7 +305,7 @@ export default function InsightsPage() {
         </Card>
       )}
 
-      {!loading && !error && data && data.facts.length > 0 && grouped && (
+      {!loading && !error && !locked && data && data.facts.length > 0 && grouped && (
         <>
           {/* The narrative, on brand, with its provenance stated plainly. */}
           <Card className="border-none shadow-none" style={{ backgroundColor: `${BRAND}0f` }}>

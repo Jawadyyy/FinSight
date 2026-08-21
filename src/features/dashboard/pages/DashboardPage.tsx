@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeftRight,
   ChartColumnBig,
+  CreditCard,
   FileDown,
   House,
   LogOut,
@@ -45,6 +46,7 @@ import AnalyticsPage from "@/features/analytics/pages/AnalyticsPage";
 import OverviewPage from "@/features/overview/pages/OverviewPage";
 import ReportsPage from "@/features/reports/pages/ReportsPage";
 import InsightsPage from "@/features/insights/pages/InsightsPage";
+import PlanPage from "@/features/subscription/pages/PlanPage";
 
 const BRAND = "#644fef";
 
@@ -54,7 +56,8 @@ export type Page =
   | "transactions"
   | "budgets"
   | "analytics"
-  | "reports";
+  | "reports"
+  | "plan";
 
 const navItems: { key: Page; label: string; icon: typeof Wallet }[] = [
   { key: "home", label: "Dashboard", icon: House },
@@ -63,6 +66,7 @@ const navItems: { key: Page; label: string; icon: typeof Wallet }[] = [
   { key: "budgets", label: "Budgets", icon: PiggyBank },
   { key: "analytics", label: "Analytics", icon: ChartColumnBig },
   { key: "reports", label: "Reports", icon: FileDown },
+  { key: "plan", label: "Plan", icon: CreditCard },
 ];
 
 const PAGE_TITLE: Record<Page, string> = {
@@ -72,6 +76,7 @@ const PAGE_TITLE: Record<Page, string> = {
   budgets: "Budgets",
   analytics: "Analytics",
   reports: "Reports",
+  plan: "Plan",
 };
 
 export default function DashboardPage() {
@@ -205,11 +210,12 @@ export default function DashboardPage() {
               {PAGE_TITLE[page]}
             </div>
             {page === "home" && <OverviewPage onNavigate={setPage} />}
-            {page === "insights" && <InsightsPage />}
+            {page === "insights" && <InsightsPage onNavigate={setPage} />}
             {page === "transactions" && <TransactionsPage />}
             {page === "budgets" && <BudgetsPage />}
             {page === "analytics" && <AnalyticsPage />}
             {page === "reports" && <ReportsPage />}
+            {page === "plan" && <PlanPage />}
           </div>
         </main>
       </SidebarInset>
