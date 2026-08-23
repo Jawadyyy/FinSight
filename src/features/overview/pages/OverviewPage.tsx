@@ -159,7 +159,7 @@ export default function OverviewPage({ onNavigate }: Props) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={() => onNavigate('insights')}>
             <Sparkles className="mr-2 h-4 w-4" />
             View insights

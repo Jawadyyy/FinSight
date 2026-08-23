@@ -5,8 +5,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api } from "@/lib/api";
-import { me, refresh } from "@/features/auth/api/authApi";
+import { api, refreshSession } from "@/lib/api";
+import { me } from "@/features/auth/api/authApi";
 import type { AuthResponse, User } from "@/types/auth";
 
 interface AuthValue {
@@ -54,8 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const { accessToken: token } = await refresh();
-        attachToken(token);
+        // refreshSession is shared and de-duplicated. That matters here because
+        // React StrictMode runs this effect twice in development, and refresh
+        // tokens are single-use — two independent calls would race, the loser
+        // would get a 401, and its catch would clear the session the winner
+        // had just restored. Which looked exactly like "reloading logs me out".
+        const token = await refreshSession();
         const currentUser = await me();
         setAccessToken(token);
         setUser(currentUser);

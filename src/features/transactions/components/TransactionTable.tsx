@@ -16,44 +16,18 @@ import {
 } from '@/components/ui/tooltip';
 import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { formatMoney, formatSignedMoney } from '@/lib/currency';
+import {
+  categoryColor,
+  describeCategory,
+  isCategoryUncertain,
+} from './transaction-display';
 import type { Transaction, TransactionType } from '@/types/transaction';
 
 interface Props {
   transactions: Transaction[];
   onEdit: (tx: Transaction) => void;
   onDelete: (id: string) => void;
-}
-
-const categoryColor: Record<string, string> = {
-  Food: 'bg-orange-100 text-orange-800',
-  Shopping: 'bg-purple-100 text-purple-800',
-  Transport: 'bg-blue-100 text-blue-800',
-  Bills: 'bg-red-100 text-red-800',
-  Entertainment: 'bg-pink-100 text-pink-800',
-  Health: 'bg-teal-100 text-teal-800',
-  Other: 'bg-gray-100 text-gray-800',
-};
-
-/** Below this the model was hedging, so the badge invites a correction. */
-const CATEGORY_CONFIDENT = 0.6;
-
-function isCategoryUncertain(tx: Transaction): boolean {
-  if (tx.categorySource === 'manual' || tx.categorySource === 'rule') return false;
-  return Number(tx.categoryConfidence) < CATEGORY_CONFIDENT;
-}
-
-function describeCategory(tx: Transaction): string {
-  const pct = Math.round(Number(tx.categoryConfidence) * 100);
-  switch (tx.categorySource) {
-    case 'manual':
-      return 'You set this category.';
-    case 'rule':
-      return 'Matched a known merchant.';
-    case 'ai':
-      return `AI categorized this (${pct}% confident). Edit the row to correct it.`;
-    default:
-      return 'Not categorized yet. Use Categorize, or edit the row to set one.';
-  }
+  onSelect: (tx: Transaction) => void;
 }
 
 const typeVariant: Record<TransactionType, 'default' | 'destructive' | 'secondary'> = {
@@ -68,7 +42,12 @@ const amountColor: Record<TransactionType, string> = {
   transfer: 'text-muted-foreground',
 };
 
-export default function TransactionTable({ transactions, onEdit, onDelete }: Props) {
+export default function TransactionTable({
+  transactions,
+  onEdit,
+  onDelete,
+  onSelect,
+}: Props) {
   if (transactions.length === 0) {
     return <p className="py-8 text-center text-muted-foreground">No transactions found.</p>;
   }
@@ -81,7 +60,79 @@ export default function TransactionTable({ transactions, onEdit, onDelete }: Pro
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="overflow-x-auto rounded-md border">
+      {/* Eight columns cannot shrink to phone width — they can only be scrolled
+          sideways, which is not a usable table. Below the width the table needs
+          the same rows are stacked as cards instead. Measured against the
+          content column, not the window, because the sidebar eats 16rem of it. */}
+      <div className="space-y-2 @4xl:hidden">
+        {transactions.map((tx) => (
+          <div
+            key={tx.id}
+            role="button"
+            tabIndex={0}
+            aria-label={`View details for ${tx.merchant ?? tx.description}`}
+            onClick={() => onSelect(tx)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect(tx);
+              }
+            }}
+            className={`cursor-pointer rounded-lg border p-3 ${
+              tx.needsReview ? 'bg-yellow-50' : 'bg-card'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  {tx.needsReview && (
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-yellow-600" />
+                  )}
+                  <span className="truncate font-medium">
+                    {tx.merchant ?? tx.description}
+                  </span>
+                </div>
+                {tx.merchant && (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {tx.description}
+                  </p>
+                )}
+              </div>
+
+              <span
+                className={`shrink-0 whitespace-nowrap font-mono text-sm font-medium ${amountColor[tx.type]}`}
+              >
+                {formatSignedMoney(tx.amount, tx.currency, tx.type)}
+              </span>
+            </div>
+
+            <div className="mt-2.5 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">{tx.date}</span>
+                <Badge
+                  variant="secondary"
+                  className={`${categoryColor[tx.category]} ${
+                    isCategoryUncertain(tx) ? 'border border-dashed border-current' : ''
+                  }`}
+                >
+                  {tx.category}
+                </Badge>
+              </div>
+
+              <div className="flex shrink-0" onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" onClick={() => onEdit(tx)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => onDelete(tx.id)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-md border @4xl:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -97,7 +148,22 @@ export default function TransactionTable({ transactions, onEdit, onDelete }: Pro
           </TableHeader>
           <TableBody>
             {transactions.map((tx) => (
-              <TableRow key={tx.id} className={tx.needsReview ? 'bg-yellow-50' : undefined}>
+              <TableRow
+                key={tx.id}
+                className={`cursor-pointer ${tx.needsReview ? 'bg-yellow-50' : ''}`}
+                onClick={() => onSelect(tx)}
+                // Reachable without a mouse: the row is the only way into the
+                // detail view, so it has to answer Enter and Space too.
+                tabIndex={0}
+                role="button"
+                aria-label={`View details for ${tx.merchant ?? tx.description}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect(tx);
+                  }
+                }}
+              >
                 <TableCell className="whitespace-nowrap">{tx.date}</TableCell>
 
                 <TableCell className="max-w-xs">
@@ -178,7 +244,9 @@ export default function TransactionTable({ transactions, onEdit, onDelete }: Pro
                 </TableCell>
 
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
+                  {/* Edit and delete are their own actions — they must not also
+                      open the detail dialog behind them. */}
+                  <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" onClick={() => onEdit(tx)}>
                       <Pencil className="h-4 w-4" />
                     </Button>

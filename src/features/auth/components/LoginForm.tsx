@@ -2,7 +2,6 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -17,6 +16,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { login, googleLogin } from "../api/authApi";
 import { loginSchema, type LoginFields } from "../schemas/authSchema";
+import { FIELD, SUBMIT } from "./field-styles";
 
 export default function LoginForm() {
   const form = useForm<LoginFields>({
@@ -57,16 +57,28 @@ export default function LoginForm() {
 
   return (
     <>
+      <p className="mb-5 mt-4 text-center text-xs text-muted-foreground">
+        use your account
+      </p>
+
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="grid gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="grid gap-3">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email address</FormLabel>
+                {/* The placeholder carries the label visually; screen readers
+                    still get a real one. */}
+                <FormLabel className="sr-only">Email address</FormLabel>
                 <FormControl>
-                  <Input type="email" autoComplete="email" {...field} />
+                  <Input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="Email"
+                    className={FIELD}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -78,9 +90,15 @@ export default function LoginForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel className="sr-only">Password</FormLabel>
                 <FormControl>
-                  <Input type="password" autoComplete="current-password" {...field} />
+                  <Input
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="Password"
+                    className={FIELD}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -93,13 +111,8 @@ export default function LoginForm() {
             </Alert>
           )}
 
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-1 w-full bg-[#644fef] text-white hover:bg-[#5540d8]"
-          >
-            {isSubmitting ? "Signing in..." : "Log in"}
-            {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
+          <Button type="submit" disabled={isSubmitting} className={SUBMIT}>
+            {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
         </form>
       </Form>

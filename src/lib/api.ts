@@ -7,11 +7,35 @@ export const api = axios.create({
 });
 
 // --- Automatic token refresh ---------------------------------------------
-// The access token lives 15 minutes. When a request comes back 401, we try the
-// refresh cookie once, update the token, and replay the original request — so
-// the user never notices the token expiring. If refresh itself fails, we give
-// up and let the 401 bubble (ProtectedRoute / the caller handles it).
-let refreshing: Promise<string> | null = null;
+// The access token lives 15 minutes. When a request comes back 401, we trade
+// the refresh cookie for a new one and replay the original request, so the
+// user never notices the token expiring.
+
+/**
+ * The single in-flight refresh, shared by every caller.
+ *
+ * Refresh tokens are single-use: the server rotates them, so the old cookie is
+ * rejected the moment a new one is issued. Two callers refreshing in parallel
+ * would therefore race, and the loser would see a 401 and treat the session as
+ * over. Everyone awaiting the same promise means exactly one rotation happens.
+ */
+let inFlight: Promise<string> | null = null;
+
+export function refreshSession(): Promise<string> {
+  inFlight ??= api
+    .post<{ accessToken: string }>("/refresh")
+    .then((response) => {
+      const token = response.data.accessToken;
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+      return token;
+    })
+    .finally(() => {
+      // Cleared so a later expiry can start a fresh one.
+      inFlight = null;
+    });
+
+  return inFlight;
+}
 
 api.interceptors.response.use(
   (response) => response,
@@ -27,18 +51,7 @@ api.interceptors.response.use(
     if (status === 401 && original && !original._retry && !isAuthCall) {
       original._retry = true;
       try {
-        // Share one in-flight refresh across concurrent 401s.
-        refreshing =
-          refreshing ??
-          api
-            .post<{ accessToken: string }>("/refresh")
-            .then((r) => r.data.accessToken)
-            .finally(() => {
-              refreshing = null;
-            });
-
-        const token = await refreshing;
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
+        const token = await refreshSession();
         original.headers.Authorization = `Bearer ${token}`;
         return api(original); // replay the original request
       } catch {

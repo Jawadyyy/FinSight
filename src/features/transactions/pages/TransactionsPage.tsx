@@ -12,6 +12,7 @@ import {
 } from '../api/transactionsApi';
 import TransactionTable from '../components/TransactionTable';
 import TransactionDialog from '../components/TransactionDialog';
+import TransactionDetailDialog from '../components/TransactionDetailDialog';
 import TransactionFilters from '../components/TransactionFilters';
 import UploadDialog from '../components/UploadDialog';
 import Pagination from '../components/Pagination';
@@ -23,6 +24,7 @@ export default function TransactionsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [viewing, setViewing] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
   const [categorizing, setCategorizing] = useState(false);
   const [categorizeNote, setCategorizeNote] = useState('');
@@ -94,9 +96,11 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Three actions do not fit beside the heading on a phone, so the row
+          wraps and the buttons share the width below it. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-bold">Transactions</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-1 flex-wrap gap-2 sm:flex-none">
           <Button variant="outline" onClick={handleCategorize} disabled={categorizing}>
             <Sparkles className="mr-2 h-4 w-4" />
             {categorizing ? 'Categorizing...' : 'Categorize'}
@@ -127,6 +131,7 @@ export default function TransactionsPage() {
             transactions={data.data}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onSelect={setViewing}
           />
           <Pagination
             page={data.page}
@@ -141,6 +146,13 @@ export default function TransactionsPage() {
         onClose={() => { setDialogOpen(false); setEditing(null); }}
         onSubmit={handleSubmit}
         transaction={editing}
+      />
+
+      <TransactionDetailDialog
+        transaction={viewing}
+        onClose={() => setViewing(null)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
 
       <UploadDialog

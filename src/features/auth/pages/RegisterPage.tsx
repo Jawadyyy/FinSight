@@ -2,13 +2,15 @@ import { Link } from "react-router-dom";
 import AuthSplit from "../components/AuthSplit";
 import RegisterForm from "../components/RegisterForm";
 
-// /register — mirrored: product panel on the left, form on the right.
+// /register — mirrored: panel on the left pointing back at login.
 export default function RegisterPage() {
   return (
     <AuthSplit
       panel="left"
-      title="Create your account"
-      subtitle="Start reading your statements in minutes"
+      title="Create Account"
+      panelTitle="Welcome Back!"
+      panelBody="To keep connected with your budgets and statements, please log in with your personal info."
+      panelCta={{ label: "Sign in", to: "/login" }}
       footer={
         <>
           Already have an account?{" "}

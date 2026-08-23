@@ -204,7 +204,10 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6">
+        {/* @container: the open sidebar takes 16rem, so the viewport is a poor
+            guide to how much room the pages actually get. Anything inside can
+            size itself off this column with @-prefixed variants instead. */}
+        <main className="@container flex-1 p-4 sm:p-6">
           <div className="mx-auto max-w-6xl">
             <div className="sr-only" aria-live="polite">
               {PAGE_TITLE[page]}

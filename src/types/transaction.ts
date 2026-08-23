@@ -34,7 +34,8 @@ export interface Transaction {
   rawText?: string | null;
   category: TransactionCategory;
   type: TransactionType;
-  source: 'manual' | 'csv' | 'pdf';
+  /** 'scan' = read by OCR from an image-only PDF, so always flagged for review. */
+  source: 'manual' | 'csv' | 'pdf' | 'scan';
   date: string;
   createdAt: string;
   updatedAt: string;

@@ -74,7 +74,9 @@ export default function UploadDialog({ open, onClose, onSuccess }: Props) {
             <p className="text-sm font-medium">
               {file ? file.name : 'Click to select CSV or PDF'}
             </p>
-            <p className="text-xs text-muted-foreground">Max 5MB</p>
+            <p className="text-xs text-muted-foreground">
+              Scanned statements and receipts work too. Max 5MB
+            </p>
             <input
               ref={inputRef}
               type="file"

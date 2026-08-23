@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { api } from '@/lib/api';
+import { createApiClient } from '@/lib/apiClient';
 import type {
   Transaction,
   TransactionsResponse,
@@ -8,37 +7,7 @@ import type {
   CategorizeResult,
 } from '@/types/transaction';
 
-const http = axios.create({
-  baseURL: '/transactions',
-  withCredentials: true,
-});
-
-// Share the auth header from the main api instance.
-http.interceptors.request.use((config) => {
-  const token = api.defaults.headers.common.Authorization;
-  if (token) config.headers.Authorization = token;
-  return config;
-});
-
-// Reuse the same 401 → refresh logic.
-http.interceptors.response.use(
-  (res) => res,
-  async (error) => {
-    const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
-      original._retry = true;
-      try {
-        const { data } = await api.post<{ accessToken: string }>('/refresh');
-        const bearer = `Bearer ${data.accessToken}`;
-        api.defaults.headers.common.Authorization = bearer;
-        http.defaults.headers.common.Authorization = bearer;
-        original.headers.Authorization = bearer;
-        return http(original);
-      } catch { /* let 401 bubble */ }
-    }
-    return Promise.reject(error);
-  },
-);
+const http = createApiClient('/transactions');
 
 export async function getTransactions(filters?: TransactionFilters): Promise<TransactionsResponse> {
   const params = filters ? Object.fromEntries(
