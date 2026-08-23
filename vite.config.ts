@@ -21,6 +21,7 @@ export default defineConfig({
       '/insights': 'http://localhost:3000',
       '/reports': 'http://localhost:3000',
       '/subscription': 'http://localhost:3000',
+      '/billing': 'http://localhost:3000',
     },
   },
 })

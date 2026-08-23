@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Check, Infinity as InfinityIcon, Sparkles, Upload } from 'lucide-react';
+import { Check, Infinity as InfinityIcon, Loader2, Sparkles, Upload } from 'lucide-react';
 import { getPlans, getSubscription } from '../api/subscriptionApi';
+import { getBillingStatus, openBillingPortal, startCheckout } from '../api/billingApi';
 import type { Plan, SubscriptionStatus } from '@/types/subscription';
 
 const BRAND = '#644fef';
@@ -16,15 +17,24 @@ export default function PlanPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [billingEnabled, setBillingEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [s, p] = await Promise.all([getSubscription(), getPlans()]);
+        const [s, p, b] = await Promise.all([
+          getSubscription(),
+          getPlans(),
+          // Payments being unconfigured is not an error, just a disabled button.
+          getBillingStatus().catch(() => ({ enabled: false })),
+        ]);
         if (cancelled) return;
         setStatus(s);
         setPlans(p);
+        setBillingEnabled(b.enabled);
       } catch {
         if (!cancelled) setError('Could not load your plan.');
       } finally {
@@ -33,6 +43,34 @@ export default function PlanPage() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Stripe sends the browser back here after checkout. The webhook is what
+  // actually grants Pro, so it can land a moment before the tier updates.
+  useEffect(() => {
+    const outcome = new URLSearchParams(window.location.search).get('checkout');
+    if (!outcome) return;
+
+    setNotice(
+      outcome === 'success'
+        ? 'Payment received. Your plan updates as soon as Stripe confirms it — refresh in a moment if it still shows Free.'
+        : 'Checkout was cancelled. You have not been charged.',
+    );
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
+
+  const run = async (task: () => Promise<void>) => {
+    setBusy(true);
+    setError('');
+    try {
+      await task();
+    } catch {
+      setError('Could not reach Stripe. Please try again.');
+      setBusy(false);
+    }
+  };
+
+  const upgrade = () => run(startCheckout);
+  const manage = () => run(openBillingPortal);
 
   if (loading) {
     return (
@@ -67,6 +105,12 @@ export default function PlanPage() {
           You are on the {status.plan.name} plan.
         </p>
       </div>
+
+      {notice && (
+        <Alert>
+          <AlertDescription>{notice}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Usage first: the number that decides whether you need to upgrade. */}
       <Card className="shadow-none">
@@ -163,14 +207,39 @@ export default function PlanPage() {
                 </ul>
 
                 {isPro && !current && (
-                  <Button className="w-full text-white" style={{ backgroundColor: BRAND }} disabled>
-                    Upgrade to Pro
-                  </Button>
+                  <>
+                    <Button
+                      className="w-full text-white"
+                      style={{ backgroundColor: BRAND }}
+                      disabled={!billingEnabled || busy}
+                      onClick={upgrade}
+                    >
+                      {busy ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Opening checkout...
+                        </>
+                      ) : (
+                        'Upgrade to Pro'
+                      )}
+                    </Button>
+                    <p className="text-center text-xs text-muted-foreground">
+                      {billingEnabled
+                        ? 'You will be taken to Stripe to pay. Cancel any time.'
+                        : 'Card payments are not configured on this server.'}
+                    </p>
+                  </>
                 )}
-                {isPro && !current && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    Card payments are not connected yet.
-                  </p>
+
+                {isPro && current && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={!billingEnabled || busy}
+                    onClick={manage}
+                  >
+                    Manage billing
+                  </Button>
                 )}
               </CardContent>
             </Card>
