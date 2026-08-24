@@ -23,15 +23,12 @@ import { StatCard } from '@/components/StatCard';
 import {
   AlertTriangle,
   ArrowRight,
-  ArrowUpRight,
-  ArrowDownRight,
   PiggyBank,
   Receipt,
   Sparkles,
   TrendingDown,
   TrendingUp,
   Upload,
-  Wallet,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/currency';
 import { getOverview } from '@/features/analytics/api/analyticsApi';

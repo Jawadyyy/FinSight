@@ -49,8 +49,12 @@ const compact = (value: number) => {
   return String(value);
 };
 
-const monthLabel = (month: string) => {
-  const [year, m] = month.split('-');
+// Recharts types both the tick value and the tooltip label loosely (they can be
+// undefined before data arrives), so these take unknown and narrow themselves
+// rather than claiming a stricter signature than Recharts actually calls with.
+const monthLabel = (value: unknown) => {
+  const [year, m] = String(value ?? '').split('-');
+  if (!year || !m) return '';
   return `${['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(m)]} ${year.slice(2)}`;
 };
 
@@ -71,7 +75,7 @@ const tooltipStyle = {
   },
 } as const;
 
-const money = (value: number) => formatMoney(value);
+const money = (value: unknown) => formatMoney(Number(value ?? 0));
 
 function Empty({ label }: { label: string }) {
   return (

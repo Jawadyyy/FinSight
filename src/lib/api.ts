@@ -1,8 +1,18 @@
 import axios from "axios";
 
+/**
+ * Where the API lives.
+ *
+ * Empty in development, so calls stay relative ('/auth/login') and the Vite
+ * proxy forwards them to localhost:3000 — same-origin to the browser, which is
+ * what lets the refresh cookie work locally. In production there is no proxy,
+ * so this is set to the deployed API's origin at build time.
+ */
+export const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
 // One shared HTTP client for the whole app.
 export const api = axios.create({
-  baseURL: "/auth",       // '/auth/login' etc. — forwarded to :3000 by the Vite proxy
+  baseURL: `${API_BASE}/auth`,
   withCredentials: true,  // send & receive the httpOnly refresh cookie
 });
 

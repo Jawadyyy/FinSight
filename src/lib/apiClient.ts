@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from 'axios';
-import { api, refreshSession } from './api';
+import { API_BASE, api, refreshSession } from './api';
 
 /**
  * Builds a feature API client that shares the app's auth.
@@ -10,8 +10,8 @@ import { api, refreshSession } from './api';
  * same moment meant one of them got a 401 and the session appeared to end.
  * Routing every client through the one deduped refresh fixes that.
  */
-export function createApiClient(baseURL: string): AxiosInstance {
-  const http = axios.create({ baseURL, withCredentials: true });
+export function createApiClient(path: string): AxiosInstance {
+  const http = axios.create({ baseURL: API_BASE + path, withCredentials: true });
 
   // Take the current token at call time; it changes after every refresh.
   http.interceptors.request.use((config) => {
