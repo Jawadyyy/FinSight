@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,8 @@ import {
 } from 'lucide-react';
 import { formatMoney } from '@/lib/currency';
 import { getInsights } from '../api/insightsApi';
-import type { InsightFact, InsightSeverity, Insights } from '@/types/insights';
+import { useCachedResource } from '@/hooks/useCachedResource';
+import type { InsightFact, InsightSeverity } from '@/types/insights';
 
 const BRAND = '#644fef';
 
@@ -197,31 +198,29 @@ function FactCard({ fact, currency }: { fact: InsightFact; currency: string }) {
 
 export default function InsightsPage({ onNavigate }: { onNavigate?: (page: 'plan') => void }) {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [data, setData] = useState<Insights | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [locked, setLocked] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError('');
-      setLocked(false);
+  // The fetcher folds the three outcomes (data / plan-locked / error) into one
+  // cached value, so a revisit restores the exact same state without refetching.
+  const { data: result, loading: rawLoading } = useCachedResource(
+    `insights:${month}`,
+    async () => {
       try {
-        const result = await getInsights(month);
-        if (!cancelled) setData(result);
+        return { kind: 'ok' as const, data: await getInsights(month) };
       } catch (err) {
-        if (cancelled) return;
         // 403 means the plan does not include insights — an upsell, not a fault.
-        if (axios.isAxiosError(err) && err.response?.status === 403) setLocked(true);
-        else setError('Could not load insights for this month.');
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (axios.isAxiosError(err) && err.response?.status === 403) {
+          return { kind: 'locked' as const };
+        }
+        return { kind: 'error' as const };
       }
-    })();
-    return () => { cancelled = true; };
-  }, [month]);
+    },
+  );
+
+  const data = result?.kind === 'ok' ? result.data : null;
+  const locked = result?.kind === 'locked';
+  const error = result?.kind === 'error' ? 'Could not load insights for this month.' : '';
+  // Skeleton only on the first load; a revisit shows the cached result at once.
+  const loading = rawLoading && !result;
 
   const grouped = data
     ? {

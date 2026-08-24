@@ -16,6 +16,7 @@ import TransactionDetailDialog from '../components/TransactionDetailDialog';
 import TransactionFilters from '../components/TransactionFilters';
 import UploadDialog from '../components/UploadDialog';
 import Pagination from '../components/Pagination';
+import { invalidateCache } from '@/hooks/useCachedResource';
 import type { Transaction, TransactionFilters as Filters, TransactionsResponse } from '@/types/transaction';
 
 export default function TransactionsPage() {
@@ -55,7 +56,7 @@ export default function TransactionsPage() {
       await createTransaction(payload);
     }
     setEditing(null);
-    await load();
+    await reload();
   };
 
   const handleEdit = (tx: Transaction) => {
@@ -65,6 +66,13 @@ export default function TransactionsPage() {
 
   const handleDelete = async (id: string) => {
     await deleteTransaction(id);
+    await reload();
+  };
+
+  // Any change to transactions moves the figures on the cached dashboard tabs
+  // (overview, analytics, insights, budgets), so clear those and reload the list.
+  const reload = async () => {
+    invalidateCache();
     await load();
   };
 
@@ -73,7 +81,7 @@ export default function TransactionsPage() {
     setCategorizeNote('');
     try {
       const result = await categorizeTransactions();
-      await load();
+      await reload();
 
       if (result.categorized === 0) {
         setCategorizeNote(
@@ -158,7 +166,7 @@ export default function TransactionsPage() {
       <UploadDialog
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        onSuccess={load}
+        onSuccess={reload}
       />
     </div>
   );

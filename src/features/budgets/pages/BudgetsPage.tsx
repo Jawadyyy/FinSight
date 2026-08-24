@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import {
 } from '../api/budgetsApi';
 import BudgetCard from '../components/BudgetCard';
 import BudgetDialog from '../components/BudgetDialog';
+import { useCachedResource, invalidateCache } from '@/hooks/useCachedResource';
 import { PaceBar } from '@/features/overview/components/PaceBar';
 import type { Budget } from '@/types/budget';
 
@@ -28,29 +29,33 @@ const MONTH_NAMES = [
 export default function BudgetsPage() {
   const now = new Date().toISOString().slice(0, 7);
   const [month, setMonth] = useState(now);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Budget | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      setBudgets(await getBudgets(month));
-    } catch {
-      // Clear the list as well as showing the error: leaving the previous
-      // month's budgets on screen under the new month's heading is worse than
-      // showing nothing, because it looks like real data.
-      setBudgets([]);
-      setError(`Could not load budgets for ${month}.`);
-    } finally {
-      setLoading(false);
-    }
-  }, [month]);
+  const { data: result, loading: rawLoading, refresh } = useCachedResource(
+    `budgets:${month}`,
+    async () => {
+      try {
+        return { budgets: await getBudgets(month), error: '' };
+      } catch {
+        // Show nothing rather than the previous month's list under the new
+        // month's heading — stale data here reads as real data.
+        return { budgets: [] as Budget[], error: `Could not load budgets for ${month}.` };
+      }
+    },
+  );
 
-  useEffect(() => { load(); }, [load]);
+  const budgets = result?.budgets ?? [];
+  const error = result?.error ?? '';
+  const loading = rawLoading && !result;
+
+  // A budget change also moves the budget-vs-actual figures on the dashboard and
+  // analytics, so drop their caches to force a fresh read next time.
+  const afterMutation = async () => {
+    invalidateCache('overview');
+    invalidateCache('analytics');
+    await refresh();
+  };
 
   const handleSubmit = async (data: { category: string; month: string; limit: number }) => {
     if (editing) {
@@ -59,7 +64,7 @@ export default function BudgetsPage() {
       await createBudget(data);
     }
     setEditing(null);
-    await load();
+    await afterMutation();
   };
 
   const handleEdit = (budget: Budget) => {
@@ -69,7 +74,7 @@ export default function BudgetsPage() {
 
   const handleDelete = async (id: string) => {
     await deleteBudget(id);
-    await load();
+    await afterMutation();
   };
 
   const totalLimit = budgets.reduce((s, b) => s + Number(b.limit), 0);

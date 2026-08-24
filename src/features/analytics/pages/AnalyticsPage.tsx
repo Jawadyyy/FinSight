@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
@@ -15,6 +15,7 @@ import { formatMoney } from '@/lib/currency';
 
 const BRAND = '#644fef';
 import { getOverview } from '../api/analyticsApi';
+import { useCachedResource } from '@/hooks/useCachedResource';
 import {
   BudgetVsActual,
   CategoryBreakdown,
@@ -22,7 +23,6 @@ import {
   SavingsOverTime,
   SpendingTrend,
 } from '../components/charts';
-import type { AnalyticsOverview } from '@/types/analytics';
 
 const RANGES = [
   { value: '3', label: 'Last 3 months' },
@@ -48,29 +48,17 @@ function Panel({ title, subtitle, children }: {
 
 export default function AnalyticsPage() {
   const [months, setMonths] = useState('6');
-  const [data, setData] = useState<AnalyticsOverview | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      setData(await getOverview({ months: Number(months) }));
-    } catch {
-      setError('Could not load analytics.');
-    } finally {
-      setLoading(false);
-    }
-  }, [months]);
+  const { data, loading } = useCachedResource(`analytics:${months}`, () =>
+    getOverview({ months: Number(months) }),
+  );
 
-  useEffect(() => { load(); }, [load]);
-
-  if (loading) return <CardsSkeleton />;
-  if (error || !data) {
+  // Skeleton only when there is no cached data to show yet.
+  if (loading && !data) return <CardsSkeleton />;
+  if (!data) {
     return (
       <Alert variant="destructive">
-        <AlertDescription>{error || 'No analytics data yet.'}</AlertDescription>
+        <AlertDescription>No analytics data yet.</AlertDescription>
       </Alert>
     );
   }

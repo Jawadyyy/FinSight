@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,8 +35,7 @@ import { getOverview } from '@/features/analytics/api/analyticsApi';
 import { getTransactions } from '@/features/transactions/api/transactionsApi';
 import { IncomeVsExpenses } from '@/features/analytics/components/charts';
 import { PaceBar } from '../components/PaceBar';
-import type { AnalyticsOverview } from '@/types/analytics';
-import type { Transaction } from '@/types/transaction';
+import { useCachedResource } from '@/hooks/useCachedResource';
 
 const BRAND = '#644fef';
 
@@ -73,32 +72,24 @@ interface Props {
 
 export default function OverviewPage({ onNavigate }: Props) {
   const [months, setMonths] = useState('6');
-  const [data, setData] = useState<AnalyticsOverview | null>(null);
-  const [recent, setRecent] = useState<Transaction[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const [overview, page] = await Promise.all([
-          getOverview({ months: Number(months) }),
-          getTransactions({ page: 1, limit: 5 }),
-        ]);
-        if (cancelled) return;
-        setData(overview);
-        setRecent(page.data);
-        setTotal(page.total);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [months]);
+  const { data: bundle, loading } = useCachedResource(
+    `overview:${months}`,
+    async () => {
+      const [overview, page] = await Promise.all([
+        getOverview({ months: Number(months) }),
+        getTransactions({ page: 1, limit: 5 }),
+      ]);
+      return { overview, recent: page.data, total: page.total };
+    },
+  );
 
-  if (loading) return <CardsSkeleton />;
+  const data = bundle?.overview ?? null;
+  const recent = bundle?.recent ?? [];
+  const total = bundle?.total ?? 0;
+
+  // Skeleton only on the very first load; a revisit shows cached data at once.
+  if (loading && !bundle) return <CardsSkeleton />;
 
   const thisMonth = data?.monthly[data.monthly.length - 1];
   const lastMonth = data?.monthly[data.monthly.length - 2];
