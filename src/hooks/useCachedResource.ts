@@ -33,6 +33,7 @@ export function useCachedResource<T>(key: string, fetcher: () => Promise<T>) {
     () => cache.get(key) as T | undefined,
   );
   const [loading, setLoading] = useState(!cache.has(key));
+  const [error, setError] = useState(false);
 
   // The fetcher is usually an inline arrow, new every render; keep the latest in
   // a ref so load() does not need it as a dependency and re-run on every render.
@@ -45,10 +46,12 @@ export function useCachedResource<T>(key: string, fetcher: () => Promise<T>) {
       const result = await fetcherRef.current();
       cache.set(key, result);
       setData(result);
+      setError(false);
     } catch {
-      // A failed background refresh keeps the last good data rather than
-      // throwing an unhandled rejection. Fetchers that need to show an error
-      // state should catch and return it as data (see InsightsPage).
+      // A failed background refresh keeps the last good data on screen. Only a
+      // first load with nothing cached surfaces as an error, so the page can
+      // show a retry instead of an endless skeleton.
+      if (!cache.has(key)) setError(true);
     } finally {
       setLoading(false);
     }
@@ -59,8 +62,9 @@ export function useCachedResource<T>(key: string, fetcher: () => Promise<T>) {
     // revalidate.
     setData(cache.get(key) as T | undefined);
     setLoading(!cache.has(key));
+    setError(false);
     void load();
   }, [key, load]);
 
-  return { data, loading, refresh: load };
+  return { data, loading, error, refresh: load };
 }

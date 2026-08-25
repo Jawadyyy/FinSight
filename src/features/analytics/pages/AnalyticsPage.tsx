@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CardsSkeleton } from '@/components/TableSkeleton';
+import { LoadError } from '@/components/LoadError';
 import { StatCard } from '@/components/StatCard';
 import { Percent, PiggyBank, TrendingDown, TrendingUp } from 'lucide-react';
 import { formatMoney } from '@/lib/currency';
@@ -49,15 +50,19 @@ function Panel({ title, subtitle, children }: {
 export default function AnalyticsPage() {
   const [months, setMonths] = useState('6');
 
-  const { data, loading } = useCachedResource(`analytics:${months}`, () =>
-    getOverview({ months: Number(months) }),
+  const { data, loading, error, refresh } = useCachedResource(
+    `analytics:${months}`,
+    () => getOverview({ months: Number(months) }),
   );
 
   // Skeleton only when there is no cached data to show yet.
   if (loading && !data) return <CardsSkeleton />;
+  // A failed load offers a retry; a successful-but-empty load is a different
+  // thing (a brand-new account) and just says so.
+  if (error && !data) return <LoadError onRetry={refresh} />;
   if (!data) {
     return (
-      <Alert variant="destructive">
+      <Alert>
         <AlertDescription>No analytics data yet.</AlertDescription>
       </Alert>
     );

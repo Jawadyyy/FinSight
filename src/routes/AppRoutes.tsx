@@ -1,11 +1,14 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import HomePage from "../pages/HomePage";
-import LoginPage from "../features/auth/pages/LoginPage";
-import RegisterPage from "../features/auth/pages/RegisterPage";
-import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import ProtectedRoute from "./ProtectedRoute";
 
-// The route table.
+// The route table — the one place that maps every URL to its page. Each page
+// lives in its own feature under features/<name>/pages, so this file doubles as
+// an index of every main view in the app.
+import HomePage from "@/features/landing/pages/HomePage";
+import LoginPage from "@/features/auth/pages/LoginPage";
+import RegisterPage from "@/features/auth/pages/RegisterPage";
+import DashboardPage from "@/features/dashboard/pages/DashboardPage";
+
 export default function AppRoutes() {
   return (
     <Routes>

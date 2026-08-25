@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { CardsSkeleton } from '@/components/TableSkeleton';
+import { LoadError } from '@/components/LoadError';
 import { StatCard } from '@/components/StatCard';
 import {
   AlertTriangle,
@@ -73,7 +74,7 @@ interface Props {
 export default function OverviewPage({ onNavigate }: Props) {
   const [months, setMonths] = useState('6');
 
-  const { data: bundle, loading } = useCachedResource(
+  const { data: bundle, loading, error, refresh } = useCachedResource(
     `overview:${months}`,
     async () => {
       const [overview, page] = await Promise.all([
@@ -90,6 +91,7 @@ export default function OverviewPage({ onNavigate }: Props) {
 
   // Skeleton only on the very first load; a revisit shows cached data at once.
   if (loading && !bundle) return <CardsSkeleton />;
+  if (error && !bundle) return <LoadError onRetry={refresh} />;
 
   const thisMonth = data?.monthly[data.monthly.length - 1];
   const lastMonth = data?.monthly[data.monthly.length - 2];

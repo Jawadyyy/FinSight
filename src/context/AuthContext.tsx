@@ -20,6 +20,16 @@ interface AuthValue {
 
 const AuthContext = createContext<AuthValue | null>(null);
 
+/**
+ * A hint that this browser had a session, so the on-load refresh is worth
+ * trying. It is NOT a credential — the real refresh token is the httpOnly
+ * cookie, which the server still validates. Its only job is to let a
+ * never-logged-in visitor skip the refresh round trip and go straight to the
+ * login screen, instead of flashing a "Loading…" while a doomed /refresh
+ * call resolves.
+ */
+const SESSION_HINT = 'finsight.hadSession';
+
 // Attaching the token to axios in one place keeps set/clear symmetric.
 function attachToken(token: string | null) {
   if (token) {
@@ -39,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
     setAccessToken(data.accessToken);
     attachToken(data.accessToken);
+    localStorage.setItem(SESSION_HINT, '1');
   };
 
   // Call on logout.
@@ -46,12 +57,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setAccessToken(null);
     attachToken(null);
+    localStorage.removeItem(SESSION_HINT);
   };
 
   // On first load the access token (memory-only) is gone, but the refresh
   // cookie may still be valid. Try to trade it for a new access token so a
   // page reload does not log the user out.
   useEffect(() => {
+    // Never signed in on this browser: skip the /refresh round trip entirely
+    // and resolve straight to "logged out". This is what removes the brief
+    // "Loading…" flash before the redirect to /login.
+    if (!localStorage.getItem(SESSION_HINT)) {
+      setLoading(false);
+      return;
+    }
+
     (async () => {
       try {
         // refreshSession is shared and de-duplicated. That matters here because
@@ -64,7 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(token);
         setUser(currentUser);
       } catch {
-        // No valid cookie — stay logged out. This is normal for a fresh visitor.
+        // The hint was stale (cookie expired/revoked). Clear it so the next
+        // load skips the doomed refresh.
         clearAuth();
       } finally {
         setLoading(false);
